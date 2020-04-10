@@ -30,18 +30,15 @@ module.exports = {
 	 */
 	async store(req, res){
 		try {
+			const resourceObject = req.body.data;
 			const user = new User({
-				...req.body.nombre && { nombre: req.body.nombre },
-				...req.body.telefono && { telefono: req.body.telefono },
-				...req.body.username && { username: req.body.username },
-				...req.body.fecha_nacimiento && { fecha_nacimiento: req.body.fecha_nacimiento },
-				...req.body.email && { email: req.body.email },
-				...req.body.password && { password: encodePass(req.body.password) },
+				...resourceObject.attributes,
+				...resourceObject.attributes.password && { password: encodePass(resourceObject.attributes.password) },
 			})
 	
 			const record = await user.save();
 			res.status(201)
-				.send( standar(record) )
+				.send( standar(record, record._id, true) )
 			
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
@@ -72,13 +69,10 @@ module.exports = {
 	async update(req, res){
 		try {
 			const id = req.params.id;
+			const resourceObject = req.body.data;
 			const record = await User.findByIdAndUpdate(id, {
-				...req.body.nombre && { nombre: req.body.nombre },
-				...req.body.telefono && { telefono: req.body.telefono },
-				...req.body.username && { username: req.body.username },
-				...req.body.fecha_nacimiento && { fecha_nacimiento: req.body.fecha_nacimiento },
-				...req.body.email && { email: req.body.email },
-				...req.body.password && { password: encodePass(req.body.password) },
+				...resourceObject.attributes,
+				...resourceObject.attributes.password && { password: encodePass(resourceObject.attributes.password) },
 				updated_at: Date.now()
 			});
 			

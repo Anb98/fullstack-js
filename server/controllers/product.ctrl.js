@@ -28,18 +28,13 @@ module.exports = {
 	 */
 	async store(req, res){
 		try {
-			const product = new Product({
-				SKU        : req.body.SKU,
-				nombre     : req.body.nombre,
-				cantidad   : req.bod.cantidad,
-				precio     : req.bod.precio,
-				descripcion: req.body.descripcion,
-				imagen     : req.body.imagen,
-			})
+			const resourceObject = req.body.data;
+
+			const product = new Product({...resourceObject.attributes})
 	
 			const record = await product.save();
 			res.status(201)
-				.send( standar(record) )
+				.send( standar(record, record._id, true) )
 			
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
@@ -51,7 +46,7 @@ module.exports = {
 	 * @param {*} req Request object
 	 * @param {*} res Response object
 	 */
-	show(req, res){
+	async show(req, res){
 		try {
 			const id = req.params.id;
 			const record = await Product.findById(id);
@@ -67,8 +62,19 @@ module.exports = {
 	 * @param {*} req Request object
 	 * @param {*} res Response object
 	 */
-	update(req, res){
-		
+	async update(req, res){
+		try {
+			const id = req.params.id;
+			const resourceObject = req.body.data;
+			const record = await Product.findByIdAndUpdate(id, {
+				...resourceObject.attributes,
+				updated_at: Date.now()
+			});
+			
+			res.status(200).send(standar(await Product.findById(id), id));
+		} catch (error) {
+			res.status(500).send(`Error: ${error}`);
+		}
 	},
 
 	/**
