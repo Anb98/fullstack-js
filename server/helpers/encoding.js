@@ -7,6 +7,6 @@ module.exports = {
 		return sha256(pass + salt)
 	},
 	encodeToken(value){
-        return jwt.sign(value, token);
+        return jwt.sign(value, token, { expiresIn: '1d'});
     }
 }

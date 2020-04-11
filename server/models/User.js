@@ -13,7 +13,7 @@ const userSchema= schema({
 		index:true,
 		trim:true,
 	},
-    fecha_nacimiento: Date,
+    fecha_nacimiento: String,
     email: {
 		type: String,
 		lowercase: true,
