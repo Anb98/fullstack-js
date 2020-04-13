@@ -45,17 +45,18 @@
 				tr
 					td(colspan='6')
 						progress.progress.is-small.is-primary(max="100") 15%
+			tr
+				td(colspan=6)
+					Pagination(
+						:currentPage='Number(page)'
+						:itemsPerPage='data? data.meta.pagination.limit : 10'
+						:itemsTotal='data? data.meta.pagination.total : 0'
+						:buttonsMax='5'
+						:url="$route.name"
+						nextText='Siguiente'
+						previousText='Anterior'
+					)
 
-
-		Pagination(
-			:currentPage='Number(page)'
-			:itemsPerPage='data? data.meta.pagination.limit : 10'
-			:itemsTotal='data? data.meta.pagination.total : 0'
-			:buttonsMax='5'
-			:url="$route.name"
-			nextText='Siguiente'
-			previousText='Anterior'
-		)
 </template>
 
 <script>
@@ -203,6 +204,35 @@ export default {
 						fecha_nacimiento: '',
 					},
 				};
+			} else if (newVal === 409) {
+				if (stateUpdate.error.value?.errors[0].detail.includes('index: username_1 dup key')) {
+					Swal.fire({
+						toast: true,
+						title: `El username ingresado ya existe`,
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'warning',
+					});
+				} else if (stateUpdate.error.value?.errors[0].detail.includes('index: email_1 dup key')) {
+					Swal.fire({
+						toast: true,
+						title: `El email ingresado ya existe`,
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'warning',
+					});
+				} else {
+					Swal.fire({
+						toast: true,
+						title: stateUpdate.error.value?.errors[0].detail.details[0].message,
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'warning',
+					});
+				}
 			}
 		});
 

@@ -18,7 +18,8 @@
 </template>
 
 <script>
-import { ref, watchEffect } from '@vue/composition-api';
+import Swal from 'sweetalert2';
+import { ref, watch } from '@vue/composition-api';
 import { loginPath } from '@/config/paths';
 import useDataApi from '@/hooks/useDataApi';
 
@@ -39,14 +40,30 @@ export default {
 			});
 		};
 
-		watchEffect(() => {
-			if (state.status.value === 200) {
+		watch(state.status, (val) => {
+			if (val === 200) {
 				context.root.$store.commit('login', state.data.value.token);
 				localStorage.setItem('jwt', state.data.value.token);
 				context.root.$router.push('/');
 			}
 
-			if (state.status === 400) { alert('fail'); }
+			if (val === 400) {
+				let message = '';
+				if (state.error.value.message === 'Missing credentials') {
+					message = 'Falta ingresar las credenciales';
+				} else {
+					message = state.error.value.message;
+				}
+
+				Swal.fire({
+					toast: true,
+					title: message,
+					timer: 3000,
+					showConfirmButton: false,
+					position: 'top-end',
+					icon: 'warning',
+				});
+			}
 		});
 
 		return {

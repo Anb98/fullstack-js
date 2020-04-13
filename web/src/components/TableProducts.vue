@@ -58,22 +58,23 @@
 								span.icon.is-small
 									i.fas.fa-save
 
+				tr
+					td(colspan=6)
+						Pagination(
+							:currentPage='Number(page)'
+							:itemsPerPage='data? data.meta.pagination.limit : 10'
+							:itemsTotal='data? data.meta.pagination.total : 0'
+							:buttonsMax='5'
+							:url="$route.name"
+							nextText='Siguiente'
+							previousText='Anterior'
+						)
+
 
 			template(v-else)
 				tr
 					td(colspan='6')
 						progress.progress.is-small.is-primary(max="100") 15%
-
-
-		Pagination(
-			:currentPage='Number(page)'
-			:itemsPerPage='data? data.meta.pagination.limit : 10'
-			:itemsTotal='data? data.meta.pagination.total : 0'
-			:buttonsMax='5'
-			:url="$route.name"
-			nextText='Siguiente'
-			previousText='Anterior'
-		)
 </template>
 
 <script>
@@ -196,7 +197,6 @@ export default {
 		});
 
 		watch(stateUpdate.status, (newVal) => {
-			console.log('setup -> newVal', newVal);
 			if (newVal === 200 || newVal === 201) {
 				if (!stateUpdate.data.value.data) {
 					Swal.fire({
@@ -237,6 +237,15 @@ export default {
 						imagen: '',
 					},
 				};
+			} else if (newVal === 409) {
+				Swal.fire({
+					toast: true,
+					title: stateUpdate.error.value?.errors[0].detail.details[0].message,
+					timer: 3000,
+					showConfirmButton: false,
+					position: 'top-end',
+					icon: 'warning',
+				});
 			}
 		});
 

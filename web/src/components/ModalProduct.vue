@@ -81,7 +81,7 @@ export default {
 			nombre: '',
 			cantidad: 0,
 			precio: 0.00,
-			descripcion: '',
+			descripcion: undefined,
 			imagen: undefined,
 		});
 

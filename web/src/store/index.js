@@ -16,6 +16,7 @@ export default new Vuex.Store({
 		logout(state) {
 			state.isLogged = false;
 			state.token = '';
+			localStorage.removeItem('jwt');
 		},
 	},
 	actions: {

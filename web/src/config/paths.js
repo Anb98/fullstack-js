@@ -1,4 +1,4 @@
-const base = 'http://localhost:3000';
+const base = 'https://express-serveer.herokuapp.com';
 
 export const usersPath = `${base}/users`;
 export const productsPath = `${base}/products`;
