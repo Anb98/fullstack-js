@@ -9,15 +9,37 @@ module.exports = {
 	 */
 	async index(req, res){
 		try {
-			const records = await Product.find({});
+            const pageParams = req.query;
+			
+			const offset = (
+				pageParams && 
+				pageParams.page && 
+				pageParams.page.offset && 
+				!isNaN(Number(pageParams.page.offset)) 
+			)
+				? Number(pageParams.page.offset)
+				: 0;
+
+			const limit = (
+				pageParams && 
+				pageParams.page && 
+				pageParams.page.limit &&
+				!isNaN(Number(pageParams.page.limit)) 
+			)
+				? Number(pageParams.page.limit)
+				: 10;
+
+
+			const records = await Product.find({}).skip(offset).limit(limit);
+			const total = await Product.estimatedDocumentCount();
 
 			if(!records)
 				return res.status(404).send('There are no products');
 
 			res.status(200)
-			.send(standar(records));
+				.send(standar({data: records, meta:{ pagination: {offset, limit, total} }}));
 		} catch (error) {
-			
+			res.status(500).send(`Error: ${error}`);
 		}
 	},
 
@@ -34,7 +56,7 @@ module.exports = {
 	
 			const record = await product.save();
 			res.status(201)
-				.send( standar(record, record._id, true) )
+				.send( standar( {data:record, id: record._id, isNew:true}) )
 			
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
@@ -51,7 +73,7 @@ module.exports = {
 			const id = req.params.id;
 			const record = await Product.findById(id);
 			
-			res.status(200).send(standar(record, id));
+			res.status(200).send(standar({data: record, id}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}
@@ -71,7 +93,7 @@ module.exports = {
 				updated_at: Date.now()
 			});
 			
-			res.status(200).send(standar(await Product.findById(id), id));
+			res.status(200).send(standar({data: await Product.findById(id), id}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}
@@ -87,7 +109,7 @@ module.exports = {
 			const id = req.params.id;
 			const record = await Product.findByIdAndDelete(id);
 			
-			res.status(200).send(standar(record));
+			res.status(200).send(standar({data: record}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}

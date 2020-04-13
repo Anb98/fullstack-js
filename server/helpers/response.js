@@ -16,12 +16,12 @@ module.exports = ( type )=>{
 		}
 	});
 
-	const meta = {
+	const metaDefault = {
 		author: "Abdiel Martinez"
 	}
 
-	const standar = (data, id, isNew)=> ({
-		meta,
+	const standar = ({data, id, isNew, meta = {}}={})=> ({
+		meta:{...metaDefault, ...meta},
 		...!isNew && {
 			links: {
 				self: id && !isNew ? `http://${domain}/${type}/${id}` : `http://${domain}/${type}`
@@ -31,7 +31,7 @@ module.exports = ( type )=>{
 	});
 
 	return {
-		meta,
+		meta: metaDefault,
 		standar,
 	}
 }

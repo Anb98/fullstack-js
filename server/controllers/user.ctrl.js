@@ -10,13 +10,35 @@ module.exports = {
 	 */
 	 async index(req, res){
 		try {
-			const records = await User.find({});
+			const pageParams = req.query;
+			
+			const offset = (
+				pageParams && 
+				pageParams.page && 
+				pageParams.page.offset && 
+				!isNaN(Number(pageParams.page.offset)) 
+			)
+				? Number(pageParams.page.offset)
+				: 0;
+
+			const limit = (
+				pageParams && 
+				pageParams.page && 
+				pageParams.page.limit &&
+				!isNaN(Number(pageParams.page.limit)) 
+			)
+				? Number(pageParams.page.limit)
+				: 10;
+
+			const total = await User.estimatedDocumentCount();
+
+			const records = await User.find({}).skip(offset).limit(limit);
 	
 			if(!records)
 				return res.status(404).send('There are no users');
 	
 			res.status(200)
-				.send( standar(records) );
+			.send(standar({data: records, meta:{ pagination: {offset, limit, total} }}));
 			
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
@@ -38,7 +60,7 @@ module.exports = {
 	
 			const record = await user.save();
 			res.status(201)
-				.send( standar(record, record._id, true) )
+				.send( standar( {data:record, id: record._id, isNew:true}) )
 			
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
@@ -55,7 +77,7 @@ module.exports = {
 			const id = req.params.id;
 			const record = await User.findById(id);
 			
-			res.status(200).send(standar(record, id));
+			res.status(200).send(standar({data: record, id}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}
@@ -76,7 +98,7 @@ module.exports = {
 				updated_at: Date.now()
 			});
 			
-			res.status(200).send(standar(await User.findById(id), id));
+			res.status(200).send(standar({data: await User.findById(id), id}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}
@@ -93,7 +115,7 @@ module.exports = {
 			const id = req.params.id;
 			const record = await User.findByIdAndDelete(id);
 			
-			res.status(200).send(standar(record));
+			res.status(200).send(standar({data: record}));
 		} catch (error) {
 			res.status(500).send(`Error: ${error}`);
 		}
