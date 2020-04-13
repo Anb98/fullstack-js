@@ -1,5 +1,6 @@
 <template lang="pug">
 	div.container
+		ModalUser(v-if='showModal' @close='showModal=false' @save='store')
 		table.table
 			tr
 				th Nombre
@@ -7,10 +8,14 @@
 				th Email
 				th Telefono
 				th Fecha nacimiento
-				th Acciones
+				th
+					span(:style='{display: "inline-block", paddingRight:"1em"}') Acciones
+					button.button.is-success.is-small(@click='showModal=true' title='Agregar usuario')
+						span.icon.is-small
+							i.fas.fa-plus-square
 
-			template(v-if='!state.isLoading.value && state.data.value')
-				template(v-for='(item,i) of state.data.value.data')
+			template(v-if='!isLoading && data')
+				template(v-for='(item,i) of data.data')
 					tr(:key='item.id' v-if='i!==editingRow.index' )
 						td {{ item.attributes.nombre }}
 						td {{ item.attributes.username }}
@@ -43,9 +48,9 @@
 
 
 		Pagination(
-			:currentPage='page'
-			:itemsPerPage='10'
-			:itemsTotal='100'
+			:currentPage='Number(page)'
+			:itemsPerPage='data? data.meta.pagination.limit : 10'
+			:itemsTotal='data? data.meta.pagination.total : 0'
 			:buttonsMax='5'
 			:url="$route.name"
 			nextText='Siguiente'
@@ -55,16 +60,19 @@
 
 <script>
 import {
-	computed, onMounted, ref, watch,
+	computed, ref, watch,
 } from '@vue/composition-api';
-import useDataApi from '@/hooks/useDataApi';
+import Swal from 'sweetalert2';
 import Pagination from 'vue-bulma-paginate';
 
+import useDataApi from '@/hooks/useDataApi';
 import { usersPath } from '@/config/paths';
+import ModalUser from '@/components/ModalUser.vue';
 
 export default {
 	components: {
 		Pagination,
+		ModalUser,
 	},
 	setup(props, context) {
 		const editingRow = ref({
@@ -78,9 +86,11 @@ export default {
 				fecha_nacimiento: '',
 			},
 		});
+		const showModal = ref(false);
+		const token = computed(() => context.root.$store.state.token);
 
 		const [state, fetchUsers] = useDataApi(usersPath);
-		const [stateUpdate, updateUsers] = useDataApi();
+		const [stateUpdate, updateUsers] = useDataApi(usersPath, { Authorization: `Bearer ${token.value}` });
 		const page = computed(() => context.root.$route.query && context.root.$route.query.page || 1);
 
 		const selectRow = (item, index) => {
@@ -111,20 +121,77 @@ export default {
 			});
 		};
 
-		const destroy = (id) => {
+		const store = (data) => {
 			updateUsers({
-				url: `${usersPath}/${id}`,
-				method: 'delete',
+				url: `${usersPath}`,
+				body: {
+					data: {
+						type: 'users',
+						attributes: data,
+					},
+				},
+				method: 'post',
 			});
 		};
 
-		onMounted(() => {
-			fetchUsers();
+		const destroy = (id) => {
+			Swal.fire({
+				title: 'Confirmación',
+				text: '¿Está seguro que desea eliminar el usuario?',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#3085d6',
+				cancelButtonColor: '#d33',
+				confirmButtonText: 'Sí',
+			}).then((result) => {
+				if (result.value) {
+					updateUsers({
+						url: `${usersPath}/${id}`,
+						method: 'delete',
+					});
+				}
+			});
+		};
+
+
+		watch(page, (val) => {
+			fetchUsers({
+				params: {
+					'page[offset]': (val - 1) * 10,
+				},
+			});
 		});
 
 		watch(stateUpdate.status, (newVal) => {
-			if (newVal === 200) {
-				fetchUsers();
+			if (newVal === 200 || newVal === 201) {
+				if (!stateUpdate.data.value.data) {
+					Swal.fire({
+						toast: true,
+						title: 'Eliminado con exito!',
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'success',
+					});
+				} else {
+					Swal.fire({
+						toast: true,
+						title: 'Guardado con exito!',
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'success',
+					});
+				}
+
+
+				fetchUsers({
+					params: {
+						'page[offset]': (page.value - 1) * 10,
+					},
+				});
+
+				showModal.value = false;
 				editingRow.value = {
 					index: -1,
 					id: '',
@@ -140,12 +207,14 @@ export default {
 		});
 
 		return {
+			...state,
 			page,
-			state,
 			save,
 			editingRow,
 			selectRow,
 			destroy,
+			showModal,
+			store,
 		};
 	},
 };

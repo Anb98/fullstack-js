@@ -18,11 +18,18 @@ export default {
 		TableUser,
 		TableProducts,
 	},
-	setup() {
+	setup(props, context) {
 		const selectedMenu = ref('Usuarios');
 
 		const onSelect = (text) => {
 			selectedMenu.value = text;
+
+			if (context.root.$route.query.page) {
+				context.root.$router.replace({
+					path: '/',
+					query: {},
+				});
+			}
 		};
 
 		return { selectedMenu, onSelect };

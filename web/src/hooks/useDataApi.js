@@ -57,6 +57,7 @@ export default (originalUrl, headers = null) => {
 		dispatch('FETCH_INIT');
 
 		try {
+			console.log('wwwwww');
 			const result = await axios({
 				method,
 				url: url || originalUrl,
@@ -66,6 +67,7 @@ export default (originalUrl, headers = null) => {
 			});
 
 			const { data, status } = result;
+			console.log('data, status', data, status);
 
 			dispatch('FETCH_SUCCESS', { data, status });
 		} catch (error) {

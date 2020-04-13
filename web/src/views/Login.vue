@@ -19,6 +19,7 @@
 
 <script>
 import { ref, watchEffect } from '@vue/composition-api';
+import { loginPath } from '@/config/paths';
 import useDataApi from '@/hooks/useDataApi';
 
 export default {
@@ -29,7 +30,7 @@ export default {
 			password: '',
 		});
 
-		const [state, fetchLogin] = useDataApi('http://localhost:3000/auth/login');
+		const [state, fetchLogin] = useDataApi(loginPath);
 
 		const signin = () => {
 			fetchLogin({
@@ -40,8 +41,9 @@ export default {
 
 		watchEffect(() => {
 			if (state.status.value === 200) {
-				context.root.$router.push('/');
+				context.root.$store.commit('login', state.data.value.token);
 				localStorage.setItem('jwt', state.data.value.token);
+				context.root.$router.push('/');
 			}
 
 			if (state.status === 400) { alert('fail'); }

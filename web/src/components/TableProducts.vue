@@ -1,5 +1,6 @@
 <template lang="pug">
 	.container
+		ModalProduct(v-if='showModal' @close='showModal=false' @save='store')
 		table.table
 			tr
 				th SKU
@@ -8,17 +9,22 @@
 				th Precio
 				th Descripcion
 				th Imagen
-				th Acciones
+				th
+					span(:style='{display: "inline-block", paddingRight:"1em"}') Acciones
+					button.button.is-success.is-small(@click='showModal=true' title='Agregar producto')
+						span.icon.is-small
+							i.fas.fa-plus-square
 
-			template(v-if='!state.isLoading.value && state.data.value')
-				template(v-for='(item,i) of state.data.value.data')
+			template(v-if='!isLoading && data')
+				template(v-for='(item,i) of data.data')
 					tr(:key='item.id' v-if='i!==editingRow.index' )
 						td {{ item.attributes.SKU }}
 						td {{ item.attributes.nombre }}
 						td {{ item.attributes.cantidad }}
 						td {{ item.attributes.precio }}
 						td {{ item.attributes.descripcion }}
-						td {{ item.attributes.imagen }}
+						td
+							img(:src='item.attributes.imagen' :style='{height:"2.25em"}' )
 						td
 							p.buttons
 								button.button.is-primary( @click='selectRow(item, i)' )
@@ -49,8 +55,8 @@
 
 						td
 							button.button.is-success(@click='save')
-									span.icon.is-small
-										i.fas.fa-save
+								span.icon.is-small
+									i.fas.fa-save
 
 
 			template(v-else)
@@ -60,9 +66,9 @@
 
 
 		Pagination(
-			:currentPage='page'
-			:itemsPerPage='10'
-			:itemsTotal='100'
+			:currentPage='Number(page)'
+			:itemsPerPage='data? data.meta.pagination.limit : 10'
+			:itemsTotal='data? data.meta.pagination.total : 0'
 			:buttonsMax='5'
 			:url="$route.name"
 			nextText='Siguiente'
@@ -72,15 +78,19 @@
 
 <script>
 import {
-	computed, onMounted, ref, watch,
+	computed, ref, watch,
 } from '@vue/composition-api';
+import Pagination from 'vue-bulma-paginate';
+import Swal from 'sweetalert2';
+
 import { productsPath } from '@/config/paths';
 import useDataApi from '@/hooks/useDataApi';
-import Pagination from 'vue-bulma-paginate';
+import ModalProduct from '@/components/ModalProduct.vue';
 
 export default {
 	components: {
 		Pagination,
+		ModalProduct,
 	},
 	setup(props, context) {
 		const editingRow = ref({
@@ -95,6 +105,8 @@ export default {
 				imagen: '',
 			},
 		});
+		const showModal = ref(false);
+
 		const imageName = ref('');
 		const token = computed(() => context.root.$store.state.token);
 
@@ -143,20 +155,76 @@ export default {
 		};
 
 		const destroy = (id) => {
+			Swal.fire({
+				title: 'Confirmación',
+				text: '¿Está seguro que desea eliminar el producto?',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#3085d6',
+				cancelButtonColor: '#d33',
+				confirmButtonText: 'Sí',
+			}).then((result) => {
+				if (result.value) {
+					updateProducts({
+						url: `${productsPath}/${id}`,
+						method: 'delete',
+					});
+				}
+			});
+		};
+
+		const store = (data) => {
 			updateProducts({
-				url: `${productsPath}/${id}`,
-				method: 'delete',
+				url: `${productsPath}`,
+				body: {
+					data: {
+						type: 'products',
+						attributes: data,
+					},
+				},
+				method: 'post',
 			});
 		};
 
 
-		onMounted(() => {
-			fetchProducts();
+		watch(page, (val) => {
+			fetchProducts({
+				params: {
+					'page[offset]': (val - 1) * 10,
+				},
+			});
 		});
 
 		watch(stateUpdate.status, (newVal) => {
-			if (newVal === 200) {
-				fetchProducts();
+			console.log('setup -> newVal', newVal);
+			if (newVal === 200 || newVal === 201) {
+				if (!stateUpdate.data.value.data) {
+					Swal.fire({
+						toast: true,
+						title: 'Eliminado con exito!',
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'success',
+					});
+				} else {
+					Swal.fire({
+						toast: true,
+						title: 'Guardado con exito!',
+						timer: 3000,
+						showConfirmButton: false,
+						position: 'top-end',
+						icon: 'success',
+					});
+				}
+
+				fetchProducts({
+					params: {
+						'page[offset]': (page.value - 1) * 10,
+					},
+				});
+
+				showModal.value = false;
 				editingRow.value = {
 					index: -1,
 					id: '',
@@ -174,13 +242,15 @@ export default {
 
 		return {
 			page,
-			state,
+			...state,
 			imageName,
 			editingRow,
 			loadImg,
 			save,
 			selectRow,
 			destroy,
+			store,
+			showModal,
 		};
 	},
 };
