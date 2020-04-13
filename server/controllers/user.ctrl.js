@@ -1,6 +1,6 @@
 const User = require('./../models/User');
 const { encodePass } = require('./../helpers/encoding');
-const { standar } = require('./../helpers/response')('users');
+const { standar, meta } = require('./../helpers/response')('users');
 
 module.exports = {
 	/**
@@ -41,7 +41,10 @@ module.exports = {
 			.send(standar({data: records, meta:{ pagination: {offset, limit, total} }}));
 			
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -63,7 +66,21 @@ module.exports = {
 				.send( standar( {data:record, id: record._id, isNew:true}) )
 			
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			if(error.name === 'MongoError')
+				return res.status(409).json({ 
+					meta,
+					errors: [
+						{
+							title:'Malfomed request data',
+							detail: error.errmsg
+						}
+					]
+				});
+			
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 	
@@ -79,7 +96,10 @@ module.exports = {
 			
 			res.status(200).send(standar({data: record, id}));
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -100,7 +120,10 @@ module.exports = {
 			
 			res.status(200).send(standar({data: await User.findById(id), id}));
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 	
@@ -115,9 +138,12 @@ module.exports = {
 			const id = req.params.id;
 			const record = await User.findByIdAndDelete(id);
 			
-			res.status(200).send(standar({data: record}));
+			res.status(200).json({meta});
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 }

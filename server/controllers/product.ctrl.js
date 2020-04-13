@@ -1,5 +1,5 @@
 const Product = require('./../models/Product');
-const { standar } = require('./../helpers/response')('products');
+const { standar, meta } = require('./../helpers/response')('products');
 
 module.exports = {
 	/**
@@ -39,7 +39,10 @@ module.exports = {
 			res.status(200)
 				.send(standar({data: records, meta:{ pagination: {offset, limit, total} }}));
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -59,7 +62,10 @@ module.exports = {
 				.send( standar( {data:record, id: record._id, isNew:true}) )
 			
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -75,7 +81,10 @@ module.exports = {
 			
 			res.status(200).send(standar({data: record, id}));
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -95,7 +104,10 @@ module.exports = {
 			
 			res.status(200).send(standar({data: await Product.findById(id), id}));
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 
@@ -109,9 +121,12 @@ module.exports = {
 			const id = req.params.id;
 			const record = await Product.findByIdAndDelete(id);
 			
-			res.status(200).send(standar({data: record}));
+			res.status(200).json({meta});
 		} catch (error) {
-			res.status(500).send(`Error: ${error}`);
+			res.status(500).json({ 
+				meta,
+				errors: [ error ]
+			});
 		}
 	},
 }
